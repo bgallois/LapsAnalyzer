@@ -3,11 +3,11 @@ import os
 from pathlib import Path
 import sys
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QGraphicsScene
-from PySide6.QtCore import QFile, QStandardPaths, QCoreApplication, Qt
-from PySide6.QtGui import QColor, QAction, QIcon, QPen, QPainter
+from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QGraphicsScene, QToolTip, QTableWidget, QTableWidgetItem, QHeaderView
+from PySide6.QtCore import QFile, QStandardPaths, QCoreApplication, Qt, QPoint
+from PySide6.QtGui import QColor, QAction, QIcon, QPen, QPainter, QPalette
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtCharts import QChart, QChartView, QLineSeries, QAreaSeries
+from PySide6.QtCharts import QChart, QChartView, QLineSeries, QAreaSeries, QValueAxis
 
 import rc_ressources
 
@@ -58,7 +58,6 @@ class QLaps(QMainWindow):
         lap.toggled.connect(lambda isChecked: self.draw_plot(isChecked, "laps"))
         self.ui.toolBar.addAction(lap)
 
-
         self.ui.actionOpen.triggered.connect(self.import_file)
         self.plotScene = QGraphicsScene()
         self.chart = QChart()
@@ -66,6 +65,13 @@ class QLaps(QMainWindow):
         self.chartView = QChartView(self.chart)
         self.chartView.setRenderHint(QPainter.Antialiasing)
         self.ui.setCentralWidget(self.chartView)
+        self.xAxis = QValueAxis()
+        self.xAxis.setTickCount(5)
+        self.xAxis.setTitleText("distance (km)")
+        self.chart.addAxis(self.xAxis, Qt.AlignBottom)
+        self.yAxis = QValueAxis()
+        self.yAxis.setTickCount(12)
+        self.chart.addAxis(self.yAxis, Qt.AlignLeft)
 
     def load_ui(self):
         loader = QUiLoader()
@@ -83,9 +89,42 @@ class QLaps(QMainWindow):
             self.gpsData = Gps(fileName)
             self.get_plot_item()
             self.draw_plot()
+            self.xAxis.setRange(0, self.gpsData.get("distance")[-1]*1e-3)
+            self.yAxis.setRange(0, 220)
+            self.load_statistic()
             return True
         else:
             return False
+
+    def load_statistic(self):
+        ## Model->View to implement
+        self.ui.statTab.clear()
+        for l, i in enumerate(self.gpsData.stat.keys()):
+            table = QTableWidget(4,4)
+            table.setHorizontalHeaderLabels(["Variable", "Min", "Mean", "Max"])
+            table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+            table.verticalHeader().setVisible(False)
+            for k, j in enumerate(self.gpsData.stat[i].keys()):
+                table.setItem(k, 0, QTableWidgetItem(j))
+                table.setItem(k, 1, QTableWidgetItem(str(self.gpsData.stat[i][j]["min"])))
+                table.setItem(k, 2, QTableWidgetItem(str(self.gpsData.stat[i][j]["mean"])))
+                table.setItem(k, 3, QTableWidgetItem(str(self.gpsData.stat[i][j]["max"])))
+            table.setStyleSheet("QTableWidget{{ background-color: rgba({0}, {1}, {2}, {3}); }}".format(self.colorMap[l].red(), self.colorMap[l].green(), self.colorMap[l].blue(), 100))
+            self.ui.statTab.addTab(table, i)
+
+        self.ui.statTab1.clear()
+        for l, i in enumerate(self.gpsData.stat.keys()):
+            table1 = QTableWidget(4,4)
+            table1.setHorizontalHeaderLabels(["Variable", "Min", "Mean", "Max"])
+            table1.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+            table1.verticalHeader().setVisible(False)
+            for k, j in enumerate(self.gpsData.stat[i].keys()):
+                table1.setItem(k, 0, QTableWidgetItem(j))
+                table1.setItem(k, 1, QTableWidgetItem(str(self.gpsData.stat[i][j]["min"])))
+                table1.setItem(k, 2, QTableWidgetItem(str(self.gpsData.stat[i][j]["mean"])))
+                table1.setItem(k, 3, QTableWidgetItem(str(self.gpsData.stat[i][j]["max"])))
+            table1.setStyleSheet("QTableWidget{{ background-color: rgba({0}, {1}, {2}, {3}); }}".format(self.colorMap[l].red(), self.colorMap[l].green(), self.colorMap[l].blue(), 100))
+            self.ui.statTab1.addTab(table1, i)
 
     def get_plot_item(self):
         line = QPen()
@@ -97,7 +136,7 @@ class QLaps(QMainWindow):
         power = QLineSeries()
         for i, j, k, l, m, n in zip(self.gpsData.get("distance"), self.gpsData.get("elevation"), self.gpsData.get("enhanced_speed"), self.gpsData.get("heartrate"), self.gpsData.get("cadence"), self.gpsData.get("power")):
             elevationLine.append(i/1000, j)
-            speed.append(i/1000, k*3600*1e-3)
+            speed.append(i/1000, k)
             heartrate.append(i/1000, l)
             cadence.append(i/1000, m)
             power.append(i/1000, n)
@@ -134,13 +173,13 @@ class QLaps(QMainWindow):
         i = 0
         dist = 0
         while dist < self.gpsData.get("distance")[-1]:
-            self.plotItem["lap_" + str(i)] = self.draw_rectangle(colorMap[i], dist, lap)
+            self.plotItem["lap_" + str(i)] = self.draw_rectangle(colorMap[i], dist, lap, i)
             i += 1
             dist += lap
 
         self.plotItem.update({"elevation": elevation, "heartrate": heartrate, "cadence": cadence, "speed": speed, "power": power})
 
-    def draw_rectangle(self, color, x, width):
+    def draw_rectangle(self, color, x, width, count):
         rect = QAreaSeries()
         up = QLineSeries()
         rect.setBorderColor(color)
@@ -149,23 +188,30 @@ class QLaps(QMainWindow):
                 up.append(i/1000, 220)
         rect.setUpperSeries(up)
         rect.setColor(color);
+        summary = QToolTip()
+        palette = QToolTip.palette();
+        palette.setColor(QPalette.ToolTipBase, QColor(255, 255, 255, 255));
+        summary.setPalette(palette)
+        rect.hovered.connect(lambda x, y: summary.showText(self.chartView.mapToGlobal(self.chartView.rect().topLeft()), self.gpsData.get_short_summary(count)))
+        rect.clicked.connect(lambda x: self.ui.statTab.setCurrentIndex(count))
+        rect.hovered.connect(lambda x: self.ui.statTab1.setCurrentIndex(count))
         return rect
 
     def draw_plot(self, isChecked=True, key="all"):
         if key == "all":
             for i in self.plotItem.keys():
                 self.chart.addSeries(self.plotItem[i])
+                self.plotItem[i].attachAxis(self.xAxis);
+                self.plotItem[i].attachAxis(self.yAxis);
                 if i.startswith("lap_"): self.chart.legend().markers(self.plotItem[i])[0].setVisible(False)
-            self.chart.createDefaultAxes()
         elif key == "laps":
             for i in self.plotItem.keys():
                 if i.startswith("lap_"):
                     self.plotItem[i].setVisible(isChecked)
                     self.chart.legend().markers(self.plotItem[i])[0].setVisible(False)
-            self.chart.createDefaultAxes()
         else:
             self.plotItem[key].setVisible(isChecked)
-            self.chart.createDefaultAxes()
+
 
 
 if __name__ == "__main__":

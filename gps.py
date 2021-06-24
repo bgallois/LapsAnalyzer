@@ -8,8 +8,15 @@ import scipy.fft
 class Gps():
     def __init__(self, path):
       self.data = sweat.read_fit(path)
-      self.offSet = 0
+      self.data.speed *= (3600*1e-3)
       self.lapLen = self.get_lap_len()
+      self.offset = 0
+      self.stat = self.compute_data_by_lap()
+
+    def set_offset(self, offset):
+      self.offset = offset
+      self.stat = self.compute_data_by_lap()
+
 
     def get_lap_len(self):
       """
@@ -32,4 +39,28 @@ class Gps():
       Compute and plot stat by lap.
       Gps is true mean that lap are autodetected by gps.
       """
-      pass
+      stat = {}
+      count = 0
+      dist = self.offset
+      while dist < self.get("distance")[-1]:
+        data = self.data[ (self.data.distance.values >= dist) & (self.data.distance.values < dist + self.lapLen) ]
+        tmp = {}
+        for i in ["speed", "cadence", "heartrate", "power"]:
+          if i in data.columns:
+            tmp[i] = {"min": np.nanmin(data[i].values), "max": np.nanmax(data[i].values), "mean": np.nanmean(data[i].values)}
+          else:
+            tmp[i] = {"min": 0, "max": 0, "mean": 0}
+        stat["lap_" + str(count)] = tmp
+        count += 1
+        dist += self.lapLen
+      return stat
+
+
+    def get_short_summary(self, lap=None):
+      summary = []
+      for j, i in enumerate(self.stat.keys()):
+        summary.append(" Lap: {lap} \n speed: {speed} \n heartrate: {hr} \n cadence: {cd} \n power: {pw} \n".format(lap = str(j), speed= str(np.around(self.stat[i]["speed"]["mean"], 1)), hr= str(np.around(self.stat[i]["heartrate"]["mean"], 1)), cd= str(np.around(self.stat[i]["cadence"]["mean"], 1)), pw=str(np.around(self.stat[i]["power"]["mean"], 1))))
+      if lap != None:
+        return summary[lap]
+      else:
+        return summary
