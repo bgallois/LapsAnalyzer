@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import sys
+import numpy as np
 
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QGraphicsScene, QToolTip, QTableWidget, QTableWidgetItem, QHeaderView
 from PySide6.QtCore import QFile, QStandardPaths, QCoreApplication, Qt, QPoint
@@ -73,10 +74,13 @@ class QLaps(QMainWindow):
         self.yAxis.setTickCount(12)
         self.chart.addAxis(self.yAxis, Qt.AlignLeft)
 
+        self.ui.diffTable.setHorizontalHeaderLabels(["Variable", "Min", "Mean", "Max"])
+        self.ui.diffTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.ui.diffTable.verticalHeader().setVisible(False)
+
     def load_ui(self):
         loader = QUiLoader()
         path = os.fspath(Path(__file__).resolve().parent / "form.ui")
-        print(path)
         ui_file = QFile(path)
         ui_file.open(QFile.ReadOnly)
         self.ui = loader.load(ui_file, self)
@@ -106,9 +110,9 @@ class QLaps(QMainWindow):
             table.verticalHeader().setVisible(False)
             for k, j in enumerate(self.gpsData.stat[i].keys()):
                 table.setItem(k, 0, QTableWidgetItem(j))
-                table.setItem(k, 1, QTableWidgetItem(str(self.gpsData.stat[i][j]["min"])))
-                table.setItem(k, 2, QTableWidgetItem(str(self.gpsData.stat[i][j]["mean"])))
-                table.setItem(k, 3, QTableWidgetItem(str(self.gpsData.stat[i][j]["max"])))
+                table.setItem(k, 1, QTableWidgetItem(str(np.around(self.gpsData.stat[i][j]["min"], 1))))
+                table.setItem(k, 2, QTableWidgetItem(str(np.around(self.gpsData.stat[i][j]["mean"], 1))))
+                table.setItem(k, 3, QTableWidgetItem(str(np.around(self.gpsData.stat[i][j]["max"], 1))))
             table.setStyleSheet("QTableWidget{{ background-color: rgba({0}, {1}, {2}, {3}); }}".format(self.colorMap[l].red(), self.colorMap[l].green(), self.colorMap[l].blue(), 100))
             self.ui.statTab.addTab(table, i)
 
@@ -120,11 +124,30 @@ class QLaps(QMainWindow):
             table1.verticalHeader().setVisible(False)
             for k, j in enumerate(self.gpsData.stat[i].keys()):
                 table1.setItem(k, 0, QTableWidgetItem(j))
-                table1.setItem(k, 1, QTableWidgetItem(str(self.gpsData.stat[i][j]["min"])))
-                table1.setItem(k, 2, QTableWidgetItem(str(self.gpsData.stat[i][j]["mean"])))
-                table1.setItem(k, 3, QTableWidgetItem(str(self.gpsData.stat[i][j]["max"])))
+                table1.setItem(k, 1, QTableWidgetItem(str(np.around(self.gpsData.stat[i][j]["min"], 1))))
+                table1.setItem(k, 2, QTableWidgetItem(str(np.around(self.gpsData.stat[i][j]["mean"], 1))))
+                table1.setItem(k, 3, QTableWidgetItem(str(np.around(self.gpsData.stat[i][j]["max"], 1))))
             table1.setStyleSheet("QTableWidget{{ background-color: rgba({0}, {1}, {2}, {3}); }}".format(self.colorMap[l].red(), self.colorMap[l].green(), self.colorMap[l].blue(), 100))
             self.ui.statTab1.addTab(table1, i)
+
+    def load_statistic_diff(self):
+        index = self.ui.statTab.currentIndex()
+        index1 = self.ui.statTab1.currentIndex()
+        if "lap_{0}".format(index) in self.gpsData.stat and "lap_{0}".format(index1) in self.gpsData.stat:
+            for k, j in enumerate(self.gpsData.stat["lap_{0}".format(index)].keys()):
+                self.ui.diffTable.setItem(k, 0, QTableWidgetItem(j))
+                self.ui.diffTable.setItem(k, 1, QTableWidgetItem(str(np.around(self.gpsData.stat["lap_{0}".format(index)][j]["min"] - self.gpsData.stat["lap_{0}".format(index1)][j]["min"], 1))))
+                self.ui.diffTable.setItem(k, 2, QTableWidgetItem(str(np.around(self.gpsData.stat["lap_{0}".format(index)][j]["mean"] - self.gpsData.stat["lap_{0}".format(index1)][j]["mean"], 1))))
+                self.ui.diffTable.setItem(k, 3, QTableWidgetItem(str(np.around(self.gpsData.stat["lap_{0}".format(index)][j]["max"] - self.gpsData.stat["lap_{0}".format(index1)][j]["max"], 1))))
+        for i in range(self.ui.diffTable.rowCount()):
+            for j in range(self.ui.diffTable.columnCount() - 1):
+                if float(self.ui.diffTable.item(i, j + 1).text()) > 0:
+                    self.ui.diffTable.item(i, j + 1).setBackground(self.colorMap[0])
+                elif float(self.ui.diffTable.item(i, j + 1).text()) < 0:
+                    self.ui.diffTable.item(i, j + 1).setBackground(self.colorMap[1])
+                else:
+                    self.ui.diffTable.item(i, j + 1).setBackground(self.colorMap[2])
+
 
     def get_plot_item(self):
         line = QPen()
@@ -194,7 +217,9 @@ class QLaps(QMainWindow):
         summary.setPalette(palette)
         rect.hovered.connect(lambda x, y: summary.showText(self.chartView.mapToGlobal(self.chartView.rect().topLeft()), self.gpsData.get_short_summary(count)))
         rect.clicked.connect(lambda x: self.ui.statTab.setCurrentIndex(count))
+        rect.clicked.connect(self.load_statistic_diff)
         rect.hovered.connect(lambda x: self.ui.statTab1.setCurrentIndex(count))
+        rect.hovered.connect(self.load_statistic_diff)
         return rect
 
     def draw_plot(self, isChecked=True, key="all"):
