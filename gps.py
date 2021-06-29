@@ -42,7 +42,7 @@ class Gps():
       stat = {}
       count = 0
       dist = self.offset
-      while dist < self.get("distance")[-1]:
+      while dist + self.lapLen < self.get("distance")[-1]:
         data = self.data[ (self.data.distance.values >= dist) & (self.data.distance.values < dist + self.lapLen) ]
         tmp = {}
         for i in ["speed", "cadence", "heartrate", "power"]:

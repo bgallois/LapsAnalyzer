@@ -30,6 +30,7 @@
      <string>File</string>
     </property>
     <addaction name="actionOpen"/>
+    <addaction name="actionExport"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -88,6 +89,11 @@
   <action name="actionOpen">
    <property name="text">
     <string>Open</string>
+   </property>
+  </action>
+  <action name="actionExport">
+   <property name="text">
+    <string>Export as png</string>
    </property>
   </action>
  </widget>

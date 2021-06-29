@@ -4,9 +4,10 @@ from pathlib import Path
 import sys
 import numpy as np
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QGraphicsScene, QToolTip, QTableWidget, QTableWidgetItem, QHeaderView
-from PySide6.QtCore import QFile, QStandardPaths, QCoreApplication, Qt, QPoint
-from PySide6.QtGui import QColor, QAction, QIcon, QPen, QPainter, QPalette
+from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QGraphicsScene, QToolTip, QTableWidget, QTableWidgetItem, QHeaderView, QGraphicsTextItem
+from PySide6.QtCore import QFile, QStandardPaths, QCoreApplication, Qt, QPoint, QPointF
+from PySide6.QtGui import QColor, QAction, QIcon, QPen, QPainter, QPalette, QPixmap
+
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCharts import QChart, QChartView, QLineSeries, QAreaSeries, QValueAxis
 
@@ -60,6 +61,7 @@ class QLaps(QMainWindow):
         self.ui.toolBar.addAction(lap)
 
         self.ui.actionOpen.triggered.connect(self.import_file)
+        self.ui.actionExport.triggered.connect(self.export_as_png)
         self.plotScene = QGraphicsScene()
         self.chart = QChart()
         self.chart.setAnimationOptions(QChart.AllAnimations)
@@ -195,7 +197,7 @@ class QLaps(QMainWindow):
         offset = 0
         i = 0
         dist = 0
-        while dist < self.gpsData.get("distance")[-1]:
+        while dist + lap < self.gpsData.get("distance")[-1]:
             self.plotItem["lap_" + str(i)] = self.draw_rectangle(colorMap[i], dist, lap, i)
             i += 1
             dist += lap
@@ -221,6 +223,25 @@ class QLaps(QMainWindow):
         rect.hovered.connect(lambda x: self.ui.statTab1.setCurrentIndex(count))
         rect.hovered.connect(self.load_statistic_diff)
         return rect
+
+    def export_as_png(self):
+        lap = self.gpsData.get_lap_len()
+        offset = 0
+        i = 0
+        dist = 0
+        overlay = []
+        while dist + lap < self.gpsData.get("distance")[-1]:
+            text = QGraphicsTextItem(self.gpsData.get_short_summary(i))
+            text.setPos(self.chart.mapToScene(self.chart.mapToPosition(QPointF(dist/1000, 220), self.plotItem["elevation"])))
+            self.chartView.scene().addItem(text)
+            overlay.append(text)
+            i += 1
+            dist += lap
+        p = QPixmap(self.chartView.size())
+        self.chartView.render(p)
+        p.save(QStandardPaths.standardLocations(QStandardPaths.PicturesLocation)[0] + "/" + str(np.random.randint(100, 999)) + ".png", "PNG")
+        for i in overlay:
+            self.chartView.scene().removeItem(i)
 
     def draw_plot(self, isChecked=True, key="all"):
         if key == "all":
