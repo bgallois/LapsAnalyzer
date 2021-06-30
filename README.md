@@ -8,7 +8,7 @@ LapAnalyzer is a tool to analyze race laps from FIT file.
 - [x] lap statistics
 - [x] laps comparison
 - [x] screenshots summary exportation
-- [] manual laps statistics
+- [x] manual laps statistics
 
 ## Screenshot
 ![preview](assets/images/screenshot.png)

@@ -6,5 +6,6 @@
     <file>assets/images/power.png</file>
     <file>assets/images/elevation.png</file>
     <file>assets/images/lap.png</file>
+    <file>assets/images/lapManual.png</file>
 </qresource>
 </RCC>

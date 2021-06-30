@@ -6,12 +6,17 @@ import scipy.fft
 
 
 class Gps():
-    def __init__(self, path):
+    def __init__(self, path, modeAuto=True):
+      self.mode = modeAuto
       self.data = sweat.read_fit(path)
       self.data.speed *= (3600*1e-3)
-      self.lapLen = self.get_lap_len()
-      self.offset = 0
-      self.stat = self.compute_data_by_lap()
+      if not self.mode:
+        self.laps = self.get_manual_laps()
+        self.stat = self.compute_data_by_lap(self.mode)
+      else:
+        self.offset = 0
+        self.laps = self.get_lap_len()
+        self.stat = self.compute_data_by_lap(self.mode)
 
     def set_offset(self, offset):
       self.offset = offset
@@ -26,7 +31,19 @@ class Gps():
       interLat = np.interp(distance, self.data.distance.values, self.data.latitude.values)
       acf = sm.tsa.acf(interLat, nlags=len(interLat))
       lapLen = distance[np.argmax(acf[np.argmin(acf)::]) + np.argmin(acf)]
-      return lapLen
+      laps = [self.offset]
+      for i in range(int(distance[-1]/lapLen)):
+        laps += [laps[-1] + lapLen]
+      return laps
+
+    def get_manual_laps(self):
+      """
+      Find manual laps in data.
+      """
+      laps = [0]
+      for i in set(self.get("lap")):
+        laps.append(self.data[self.data.lap.values == i].distance.values[-1])
+      return laps
 
     def get(self, key):
       if key in self.data.columns:
@@ -34,25 +51,22 @@ class Gps():
       else:
         return np.zeros(self.data.distance.values.shape)
 
-    def compute_data_by_lap(self):
+    def compute_data_by_lap(self, mode):
       """
       Compute and plot stat by lap.
       Gps is true mean that lap are autodetected by gps.
       """
       stat = {}
-      count = 0
-      dist = self.offset
-      while dist + self.lapLen < self.get("distance")[-1]:
-        data = self.data[ (self.data.distance.values >= dist) & (self.data.distance.values < dist + self.lapLen) ]
+      for i, j in enumerate(self.laps[0:-1]):
+        data = self.data[ (self.data.distance.values >= j) & (self.data.distance.values <= self.laps[i+1]) ]
         tmp = {}
-        for i in ["speed", "cadence", "heartrate", "power"]:
-          if i in data.columns:
-            tmp[i] = {"min": np.nanmin(data[i].values), "max": np.nanmax(data[i].values), "mean": np.nanmean(data[i].values)}
+        for k in ["speed", "cadence", "heartrate", "power"]:
+          if k in data.columns:
+            tmp[k] = {"min": np.nanmin(data[k].values), "max": np.nanmax(data[k].values), "mean": np.nanmean(data[k].values)}
           else:
-            tmp[i] = {"min": 0, "max": 0, "mean": 0}
-        stat["lap_" + str(count)] = tmp
-        count += 1
-        dist += self.lapLen
+            tmp[k] = {"min": 0, "max": 0, "mean": 0}
+        stat["lap_" + str(i)] = tmp
+
       return stat
 
 
