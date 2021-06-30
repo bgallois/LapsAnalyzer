@@ -193,7 +193,7 @@ class QLaps(QMainWindow):
         heartrate = QLineSeries()
         cadence = QLineSeries()
         power = QLineSeries()
-        for i, j, k, l, m, n in zip(self.gpsData.get("distance"), self.gpsData.get("elevation"), self.gpsData.get("enhanced_speed"), self.gpsData.get("heartrate"), self.gpsData.get("cadence"), self.gpsData.get("power")):
+        for i, j, k, l, m, n in zip(self.gpsData.get("distance"), self.gpsData.get("elevation"), self.gpsData.get("speed"), self.gpsData.get("heartrate"), self.gpsData.get("cadence"), self.gpsData.get("power")):
             elevationLine.append(i/1000, j)
             speed.append(i/1000, k)
             heartrate.append(i/1000, l)
