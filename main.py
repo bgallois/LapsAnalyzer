@@ -5,7 +5,7 @@ import sys
 import numpy as np
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QGraphicsScene, QToolTip, QTableWidget, QTableWidgetItem, QHeaderView, QGraphicsTextItem
-from PySide2.QtCore import Signal, QFile, QStandardPaths, QCoreApplication, Qt, QPoint, QPointF
+from PySide2.QtCore import Signal, QFile, QStandardPaths, QCoreApplication, Qt, QPoint, QPointF, QTimer
 from PySide2.QtGui import QColor, QIcon, QPen, QPainter, QPalette, QPixmap
 import PySide2.QtXml
 
@@ -109,7 +109,11 @@ class QLaps(QMainWindow):
         self.chart.addAxis(self.xAxis, Qt.AlignBottom)
         self.yAxis = QValueAxis()
         self.yAxis.setTickCount(12)
+        self.yAxis.setTitleText("heartrate | cadence | speed")
         self.chart.addAxis(self.yAxis, Qt.AlignLeft)
+        self.yAxisElev = QValueAxis()
+        self.yAxisElev.setTitleText("elevation | power")
+        self.chart.addAxis(self.yAxisElev, Qt.AlignRight)
 
         self.ui.diffTable.setHorizontalHeaderLabels(["Variable", "Min", "Mean", "Max"])
         self.ui.diffTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -310,8 +314,12 @@ class QLaps(QMainWindow):
         if key == "all":
             for i in self.plotItem.keys():
                 self.chart.addSeries(self.plotItem[i])
-                self.plotItem[i].attachAxis(self.xAxis);
-                self.plotItem[i].attachAxis(self.yAxis);
+                if i in ["elevation", "power"]:
+                    self.plotItem[i].attachAxis(self.xAxis);
+                    self.plotItem[i].attachAxis(self.yAxisElev);
+                else:
+                    self.plotItem[i].attachAxis(self.xAxis);
+                    self.plotItem[i].attachAxis(self.yAxis);
                 if i.startswith("lap_"): self.chart.legend().markers(self.plotItem[i])[0].setVisible(False)
                 if i.startswith("manual_lap_"):
                     self.chart.legend().markers(self.plotItem[i])[0].setVisible(False)
