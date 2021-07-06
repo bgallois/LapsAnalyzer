@@ -293,6 +293,10 @@ class QLaps(QMainWindow):
         return rect
 
     def export_as_png(self):
+        self.ui.showFullScreen()
+        QTimer.singleShot(1000, self.save_png) # Wait that the screen is repaint then save the chart
+
+    def save_png(self):
         if self.autoMode:
             data = self.gpsData
         else:
@@ -301,14 +305,21 @@ class QLaps(QMainWindow):
         overlay = []
         for i, j in enumerate(data.laps[0:-1]):
             text = QGraphicsTextItem(data.get_short_summary(i))
-            text.setPos(self.chart.mapToScene(self.chart.mapToPosition(QPointF(j/1000, 220), self.plotItem["elevation"])))
+            text.setPos(self.chart.mapToScene(self.chart.mapToPosition(QPointF(j/1000, 220), self.plotItem["speed"])))
             self.chartView.scene().addItem(text)
             overlay.append(text)
+
+        text = QGraphicsTextItem("https://github.com/bgallois/LapsAnalyzer/")
+        text.setPos(self.chart.mapToScene(self.chart.mapToPosition(QPointF(0, -10), self.plotItem["speed"])))
+        self.chartView.scene().addItem(text)
+        overlay.append(text)
+
         p = QPixmap(self.chartView.size())
         self.chartView.render(p)
-        p.save(QStandardPaths.standardLocations(QStandardPaths.PicturesLocation)[0] + "/" + str(np.random.randint(100, 999)) + ".png", "PNG")
+        p.save(QStandardPaths.standardLocations(QStandardPaths.PicturesLocation)[0] + "/" + str(np.random.randint(100, 999)) + ".png", "PNG", 100)
         for i in overlay:
             self.chartView.scene().removeItem(i)
+        self.ui.showNormal()
 
     def draw_plot(self, isChecked=True, key="all"):
         if key == "all":
