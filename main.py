@@ -4,12 +4,19 @@ from pathlib import Path
 import sys
 import numpy as np
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QGraphicsScene, QToolTip, QTableWidget, QTableWidgetItem, QHeaderView, QGraphicsTextItem
-from PySide6.QtCore import Signal, QFile, QStandardPaths, QCoreApplication, Qt, QPoint, QPointF
-from PySide6.QtGui import QColor, QAction, QIcon, QPen, QPainter, QPalette, QPixmap
+from PySide2.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QGraphicsScene, QToolTip, QTableWidget, QTableWidgetItem, QHeaderView, QGraphicsTextItem
+from PySide2.QtCore import Signal, QFile, QStandardPaths, QCoreApplication, Qt, QPoint, QPointF
+from PySide2.QtGui import QColor, QIcon, QPen, QPainter, QPalette, QPixmap
+import PySide2.QtXml
 
-from PySide6.QtUiTools import QUiLoader
-from PySide6.QtCharts import QChart, QChartView, QLineSeries, QAreaSeries, QValueAxis
+from PySide2.QtUiTools import QUiLoader
+
+from PySide2.QtCharts import QtCharts
+QChart = QtCharts.QChart
+QChartView = QtCharts.QChartView
+QLineSeries = QtCharts.QLineSeries
+QAreaSeries = QtCharts.QAreaSeries
+QValueAxis = QtCharts.QValueAxis
 
 import rc_ressources
 
@@ -103,7 +110,7 @@ class QLaps(QMainWindow):
 
     def load_ui(self):
         loader = QUiLoader()
-        path = os.fspath(Path(__file__).resolve().parent / "form.ui")
+        path = ":/form.ui"
         ui_file = QFile(path)
         ui_file.open(QFile.ReadOnly)
         self.ui = loader.load(ui_file, self)
@@ -307,4 +314,4 @@ if __name__ == "__main__":
     app = QApplication([])
     widget = QLaps()
     widget.ui.show()
-    sys.exit(app.exec())
+    sys.exit(app.exec_())
