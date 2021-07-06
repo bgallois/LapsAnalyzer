@@ -7,6 +7,7 @@
     <file>assets/images/elevation.png</file>
     <file>assets/images/lap.png</file>
     <file>assets/images/lapManual.png</file>
+    <file>assets/images/settings.png</file>
     <file>form.ui</file>
 </qresource>
 </RCC>

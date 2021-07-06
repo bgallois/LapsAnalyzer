@@ -88,6 +88,13 @@ class QLaps(QMainWindow):
         manualLap.toggled.connect(self.load_statistic)
         self.ui.toolBar.addAction(manualLap)
 
+        setting = QAction(QIcon(":/assets/images/settings.png"), QCoreApplication.translate("main", "Settings"), self)
+        setting.setCheckable(True)
+        setting.setChecked(False)
+        self.ui.settingsDock.setVisible(False)
+        setting.toggled.connect(self.ui.settingsDock.setVisible)
+        self.ui.toolBar.addAction(setting)
+
         self.ui.actionOpen.triggered.connect(self.import_file)
         self.ui.actionExport.triggered.connect(self.export_as_png)
         self.plotScene = QGraphicsScene()
@@ -108,6 +115,8 @@ class QLaps(QMainWindow):
         self.ui.diffTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.ui.diffTable.verticalHeader().setVisible(False)
 
+        self.ui.offset.valueChanged.connect(self.offset_changed)
+
     def load_ui(self):
         loader = QUiLoader()
         path = ":/form.ui"
@@ -119,12 +128,24 @@ class QLaps(QMainWindow):
     def set_mode(self, auto):
         self.autoMode = auto
 
+    def offset_changed(self, value):
+        if hasattr(self, 'gpsData'):
+            self.chart.removeAllSeries()
+            self.gpsData.set_offset(value*1000)
+            self.get_plot_item()
+            self.draw_plot()
+            self.load_statistic()
+
+
     def import_file(self):
         self.resetted.emit()
         self.chart.removeAllSeries()
         fileName, __ = QFileDialog.getOpenFileName(self.ui, QCoreApplication.translate("main", "Open activity"), QStandardPaths.standardLocations(QStandardPaths.HomeLocation)[0], QCoreApplication.translate("main", "Activity Files (*.fit)"))
         if fileName:
             self.gpsData = Gps(fileName)
+            self.ui.offset.setValue(0)
+            tmpLen = self.gpsData.get_lap_len()
+            self.ui.offset.setRange(0, (tmpLen[1] - tmpLen[0])/1000)
             self.gpsDataManual = Gps(fileName, False)
             self.get_plot_item()
             self.draw_plot()

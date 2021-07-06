@@ -19,8 +19,9 @@ class Gps():
         self.stat = self.compute_data_by_lap(self.mode)
 
     def set_offset(self, offset):
-      self.offset = offset
-      self.stat = self.compute_data_by_lap()
+        self.laps = self.get_lap_len()
+        self.offset = offset
+        self.stat = self.compute_data_by_lap(self.mode)
 
 
     def get_lap_len(self):
