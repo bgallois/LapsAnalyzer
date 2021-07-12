@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 import numpy as np
 
-from PySide2.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QGraphicsScene, QToolTip, QTableWidget, QTableWidgetItem, QHeaderView, QGraphicsTextItem, QMessageBox
+from PySide2.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QGraphicsScene, QToolTip, QTableWidget, QTableWidgetItem, QHeaderView, QGraphicsTextItem, QMessageBox, QLabel
 from PySide2.QtCore import Signal, QFile, QStandardPaths, QCoreApplication, Qt, QPoint, QPointF, QTimer
 from PySide2.QtGui import QColor, QIcon, QPen, QPainter, QPalette, QPixmap
 import PySide2.QtXml
@@ -188,6 +188,10 @@ class QLaps(QMainWindow):
 
         self.ui.offset.valueChanged.connect(self.offset_changed)
 
+        # statusbar
+        self.statusInfo = QLabel()
+        self.ui.statusbar.addPermanentWidget(self.statusInfo)
+
     def load_ui(self):
         loader = QUiLoader()
         path = ":/form.ui"
@@ -226,8 +230,10 @@ class QLaps(QMainWindow):
             self.xAxis.setRange(0, self.gpsData.get("distance")[-1] * 1e-3)
             self.yAxis.setRange(0, 220)
             self.load_statistic()
+            self.statusInfo.setText(fileName + " is opened")
             return True
         else:
+            self.statusInfo.setText("")
             return False
 
     def load_statistic(self):
@@ -453,8 +459,10 @@ class QLaps(QMainWindow):
 
         p = QPixmap(self.chartView.size())
         self.chartView.render(p)
-        p.save(QStandardPaths.standardLocations(QStandardPaths.PicturesLocation)[
-               0] + "/" + str(np.random.randint(100, 999)) + ".png", "PNG", 100)
+        fileName = QStandardPaths.standardLocations(QStandardPaths.PicturesLocation)[
+            0] + "/" + str(np.random.randint(100, 999)) + ".png"
+        p.save(fileName, "PNG", 100)
+        self.ui.statusbar.showMessage("Chart exported as " + fileName, 8000)
         for i in overlay:
             self.chartView.scene().removeItem(i)
         self.ui.showNormal()
