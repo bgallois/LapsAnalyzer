@@ -2,8 +2,6 @@ from statsmodels import api as sm
 import pandas as pd
 import numpy as np
 import sweat
-import scipy.fft
-
 
 class Gps():
     def __init__(self, path, modeAuto=True):
