@@ -97,6 +97,9 @@ class QLaps(QMainWindow):
 
         self.ui.actionOpen.triggered.connect(self.import_file)
         self.ui.actionExport.triggered.connect(self.export_as_png)
+        self.ui.actionClose.triggered.connect(self.close)
+        self.ui.actionAboutQt.triggered.connect(qApp.aboutQt)
+
         self.plotScene = QGraphicsScene()
         self.chart = QChart()
         self.chart.setAnimationOptions(QChart.AllAnimations)
