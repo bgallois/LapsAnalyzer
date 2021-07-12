@@ -101,7 +101,7 @@ class QLaps(QMainWindow):
         self.chart = QChart()
         self.chart.setAnimationOptions(QChart.AllAnimations)
         self.chartView = QChartView(self.chart)
-        self.chartView.setRenderHint(QPainter.Antialiasing)
+        self.chartView.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform | QPainter.LosslessImageRendering)
         self.ui.setCentralWidget(self.chartView)
         self.xAxis = QValueAxis()
         self.xAxis.setTickCount(5)
@@ -304,7 +304,8 @@ class QLaps(QMainWindow):
 
         overlay = []
         for i, j in enumerate(data.laps[0:-1]):
-            text = QGraphicsTextItem(data.get_short_summary(i))
+            text = QGraphicsTextItem()
+            text.setHtml("<div style='background-color:rgba(250, 250, 250, 0.7);'>" + data.get_short_summary(i).replace("\n", "<br>") + "</div>")
             text.setPos(self.chart.mapToScene(self.chart.mapToPosition(QPointF(j/1000, 220), self.plotItem["speed"])))
             self.chartView.scene().addItem(text)
             overlay.append(text)
