@@ -279,6 +279,7 @@ class QLaps(QMainWindow):
             self.draw_plot()
             self.xAxis.setRange(0, self.gpsData.get("distance")[-1] * 1e-3)
             self.yAxis.setRange(0, 220)
+            self.yAxisElev.setRange(0, max(np.nanmax(self.gpsData.get("power")), np.nanmax(self.gpsData.get("elevation"))))
             self.load_statistic()
             self.statusInfo.setText(fileName + " is opened")
 
@@ -287,6 +288,7 @@ class QLaps(QMainWindow):
             self.xAutoAxis.append(["Lap " + str(i) for i in range(len(self.gpsData.laps)-1)])
             self.xManAxis.append(["Lap " + str(i) for i in range(len(self.gpsDataManual.laps)-1)])
             self.yStatAxis.setRange(0, 220)
+            self.yStatAxisElev.setRange(0, np.nanmax(self.gpsData.get("power")))
 
             return True
         else:
