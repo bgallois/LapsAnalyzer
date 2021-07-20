@@ -50,9 +50,11 @@ class Gps():
                 self.data[self.data.lap.values == i].distance.values[-1])
         return laps
 
-    def get(self, key):
-        if key in self.data.columns:
-            return self.data[key].values
+    def get(self, key, distMin=0, distMax=np.inf):
+        data = self.data[(self.data.distance.values >= distMin) & (
+                self.data.distance.values <= distMax)]
+        if key in data.columns:
+            return data[key].values
         else:
             return np.zeros(self.data.distance.values.shape)
 

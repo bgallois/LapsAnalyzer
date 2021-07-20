@@ -18,6 +18,9 @@ QChartView = QtCharts.QChartView
 QLineSeries = QtCharts.QLineSeries
 QAreaSeries = QtCharts.QAreaSeries
 QValueAxis = QtCharts.QValueAxis
+QBarCategoryAxis = QtCharts.QBarCategoryAxis
+QBoxPlotSeries = QtCharts.QBoxPlotSeries
+QBoxSet = QtCharts.QBoxSet
 
 
 dirname = os.path.dirname(PySide2.__file__)
@@ -67,6 +70,9 @@ class QLaps(QMainWindow):
         speed.toggled.connect(
             lambda isChecked: self.draw_plot(
                 isChecked, "speed"))
+        speed.toggled.connect(
+            lambda isChecked: self.draw_stat(
+                isChecked, "speed"))
         self.resetted.connect(lambda: speed.setChecked(True))
         self.ui.toolBar.addAction(speed)
 
@@ -80,6 +86,9 @@ class QLaps(QMainWindow):
         hr.setChecked(True)
         hr.toggled.connect(
             lambda isChecked: self.draw_plot(
+                isChecked, "heartrate"))
+        hr.toggled.connect(
+            lambda isChecked: self.draw_stat(
                 isChecked, "heartrate"))
         self.resetted.connect(lambda: hr.setChecked(True))
         self.ui.toolBar.addAction(hr)
@@ -95,6 +104,9 @@ class QLaps(QMainWindow):
         cd.toggled.connect(
             lambda isChecked: self.draw_plot(
                 isChecked, "cadence"))
+        cd.toggled.connect(
+            lambda isChecked: self.draw_stat(
+                isChecked, "cadence"))
         self.resetted.connect(lambda: cd.setChecked(True))
         self.ui.toolBar.addAction(cd)
 
@@ -108,6 +120,9 @@ class QLaps(QMainWindow):
         pw.setChecked(True)
         pw.toggled.connect(
             lambda isChecked: self.draw_plot(
+                isChecked, "power"))
+        pw.toggled.connect(
+            lambda isChecked: self.draw_stat(
                 isChecked, "power"))
         self.resetted.connect(lambda: pw.setChecked(True))
         self.ui.toolBar.addAction(pw)
@@ -123,6 +138,9 @@ class QLaps(QMainWindow):
         lap.toggled.connect(
             lambda isChecked: self.draw_plot(
                 isChecked, "laps"))
+        lap.toggled.connect(
+            lambda isChecked: self.draw_stat(
+                isChecked, "auto"))
         lap.toggled.connect(
             lambda isChecked: manualLap.setChecked(
                 not isChecked))
@@ -143,6 +161,9 @@ class QLaps(QMainWindow):
         manualLap.toggled.connect(
             lambda isChecked: self.draw_plot(
                 isChecked, "manual_laps"))
+        manualLap.toggled.connect(
+            lambda isChecked: self.draw_stat(
+                isChecked, "manual"))
         manualLap.toggled.connect(
             lambda isChecked: lap.setChecked(
                 not isChecked))
@@ -167,13 +188,13 @@ class QLaps(QMainWindow):
         self.ui.actionAboutQt.triggered.connect(qApp.aboutQt)
         self.ui.actionLicense.triggered.connect(lambda: QMessageBox.about(self.ui, "License", "MIT License\nCopyright (c) 2021 Benjamin Gallois\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the 'Software'), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."))
 
-        self.plotScene = QGraphicsScene()
+        # Graph chart
         self.chart = QChart()
         self.chart.setAnimationOptions(QChart.AllAnimations)
         self.chartView = QChartView(self.chart)
         self.chartView.setRenderHints(
             QPainter.Antialiasing | QPainter.SmoothPixmapTransform | QPainter.LosslessImageRendering)
-        self.ui.setCentralWidget(self.chartView)
+        self.ui.chartStack.addTab(self.chartView, "Graph")
         self.xAxis = QValueAxis()
         self.xAxis.setTickCount(5)
         self.xAxis.setTitleText("distance (km)")
@@ -185,6 +206,25 @@ class QLaps(QMainWindow):
         self.yAxisElev = QValueAxis()
         self.yAxisElev.setTitleText("elevation | power")
         self.chart.addAxis(self.yAxisElev, Qt.AlignRight)
+
+        # Stat chart
+        self.statChart = QChart()
+        self.statChart.setAnimationOptions(QChart.AllAnimations)
+        self.statView = QChartView(self.statChart)
+        self.statView.setRenderHints(
+            QPainter.Antialiasing | QPainter.SmoothPixmapTransform | QPainter.LosslessImageRendering)
+        self.ui.chartStack.addTab(self.statView, "Stat")
+        self.xAutoAxis = QBarCategoryAxis()
+        self.statChart.addAxis(self.xAutoAxis, Qt.AlignBottom)
+        self.xManAxis = QBarCategoryAxis()
+        self.statChart.addAxis(self.xManAxis, Qt.AlignBottom)
+        self.yStatAxis = QValueAxis()
+        self.statChart.addAxis(self.yStatAxis, Qt.AlignLeft)
+        self.yStatAxis.setTickCount(12)
+        self.yStatAxis.setTitleText("heartrate | cadence | speed")
+        self.yStatAxisElev = QValueAxis()
+        self.yStatAxisElev.setTitleText("power")
+        self.statChart.addAxis(self.yStatAxisElev, Qt.AlignRight)
 
         self.ui.diffTable.setHorizontalHeaderLabels(
             ["Variable", "Min", "Mean", "Max"])
@@ -216,9 +256,14 @@ class QLaps(QMainWindow):
             self.draw_plot()
             self.load_statistic()
 
+            self.statChart.removeAllSeries()
+            self.get_stat_item()
+            self.draw_stat()
+
     def import_file(self):
         self.resetted.emit()
         self.chart.removeAllSeries()
+        self.statChart.removeAllSeries()
         fileName, __ = QFileDialog.getOpenFileName(
             self.ui, QCoreApplication.translate(
                 "main", "Open activity"), QStandardPaths.standardLocations(
@@ -236,6 +281,13 @@ class QLaps(QMainWindow):
             self.yAxis.setRange(0, 220)
             self.load_statistic()
             self.statusInfo.setText(fileName + " is opened")
+
+            self.get_stat_item()
+            self.draw_stat()
+            self.xAutoAxis.append(["Lap " + str(i) for i in range(len(self.gpsData.laps)-1)])
+            self.xManAxis.append(["Lap " + str(i) for i in range(len(self.gpsDataManual.laps)-1)])
+            self.yStatAxis.setRange(0, 220)
+
             return True
         else:
             self.statusInfo.setText("")
@@ -389,6 +441,45 @@ class QLaps(QMainWindow):
                               "speed": speed,
                               "power": power})
 
+    def get_stat_item(self):
+        self.statItem = {}
+
+        colorMap = []
+        for i in self.colorMap:
+            i.setAlpha(80)
+            colorMap.append(i)
+
+        for i, j in enumerate(self.gpsData.laps[0:-1]):
+            self.statItem["auto_lap_" + str(i)] = self.draw_cat_rectangle(
+                colorMap[i], i - 0.5, 1, i, True)
+
+        for i, j in enumerate(self.gpsDataManual.laps[0:-1]):
+            self.statItem["manual_lap_" + str(i)] = self.draw_cat_rectangle(
+                colorMap[i], i - 0.5, 1, i, True)
+
+        for l, k, m in zip(["speed (km/h)", "heartrate (bpm)", "cadence (rpm)", "power (W)"], ["speed", "heartrate", "cadence", "power"], [QColor(109, 144, 79, 255), QColor(252, 79, 48, 255), QColor(48, 162, 218, 255), QColor(229, 174, 56, 255)]):
+            box = QBoxPlotSeries()
+            brush = box.brush()
+            brush.setColor(m)
+            brush.setStyle(Qt.SolidPattern)
+            box.setBrush(brush)
+            box.setName(l)
+            for i, j in enumerate(self.gpsData.laps[0:-1]):
+                data = self.gpsData.get(k, j, self.gpsData.laps[i+1])
+                box.append(QBoxSet(np.nanmin(data), np.nanpercentile(data, 25), np.nanpercentile(data, 50), np.nanpercentile(data, 75), np.nanmax(data), "Lap " + str(i)))
+            self.statItem["auto_" + k] = box
+
+            box = QBoxPlotSeries()
+            box.setName(l)
+            brush = box.brush()
+            brush.setColor(m)
+            brush.setStyle(Qt.SolidPattern)
+            box.setBrush(brush)
+            for i, j in enumerate(self.gpsDataManual.laps[0:-1]):
+                data = self.gpsDataManual.get(k, j, self.gpsDataManual.laps[i+1])
+                box.append(QBoxSet(np.nanmin(data), np.nanpercentile(data, 25), np.nanpercentile(data, 50), np.nanpercentile(data, 75), np.nanmax(data), "Lap " + str(i)))
+            self.statItem["manual_" + k] = box
+
     def draw_rectangle(self, color, x, width, count, auto=True):
         rect = QAreaSeries()
         up = QLineSeries()
@@ -397,6 +488,38 @@ class QLaps(QMainWindow):
             if i >= x and i < x + width and x + \
                     width <= self.gpsData.get("distance")[-1]:
                 up.append(i / 1000, 220)
+        rect.setUpperSeries(up)
+        rect.setColor(color)
+        summary = QToolTip()
+        palette = QToolTip.palette()
+        palette.setColor(QPalette.ToolTipBase, QColor(255, 255, 255, 255))
+        summary.setPalette(palette)
+        if auto:
+            rect.hovered.connect(
+                lambda x,
+                y: summary.showText(
+                    self.chartView.mapToGlobal(
+                        self.chartView.rect().topLeft()),
+                    self.gpsData.get_short_summary(count)))
+        else:
+            rect.hovered.connect(
+                lambda x,
+                y: summary.showText(
+                    self.chartView.mapToGlobal(
+                        self.chartView.rect().topLeft()),
+                    self.gpsDataManual.get_short_summary(count)))
+        rect.clicked.connect(lambda x: self.ui.statTab.setCurrentIndex(count))
+        rect.clicked.connect(self.load_statistic_diff)
+        rect.hovered.connect(lambda x: self.ui.statTab1.setCurrentIndex(count))
+        rect.hovered.connect(self.load_statistic_diff)
+        return rect
+
+    def draw_cat_rectangle(self, color, x, width, count, auto=True):
+        rect = QAreaSeries()
+        up = QLineSeries()
+        rect.setBorderColor(color)
+        up.append(x, 220)
+        up.append(x + width, 220)
         rect.setUpperSeries(up)
         rect.setColor(color)
         summary = QToolTip()
@@ -503,6 +626,48 @@ class QLaps(QMainWindow):
                         self.plotItem[i])[0].setVisible(False)
         else:
             self.plotItem[key].setVisible(isChecked)
+
+    def draw_stat(self, isChecked=True, key="all"):
+        if key == "all":
+            for i in self.statItem.keys():
+                self.statChart.addSeries(self.statItem[i])
+                if "power" in i:
+                    self.statItem[i].attachAxis(self.yStatAxisElev)
+                else:
+                    self.statItem[i].attachAxis(self.yStatAxis)
+                if "auto" in i:
+                    self.statItem[i].setVisible(self.autoMode)
+                    self.statItem[i].attachAxis(self.xAutoAxis)
+                    self.xAutoAxis.setVisible(self.autoMode)
+                if "manual" in i:
+                    self.statItem[i].setVisible(not self.autoMode)
+                    self.statItem[i].attachAxis(self.xManAxis)
+                    self.xManAxis.setVisible(not self.autoMode)
+                if "lap_" in i:
+                    self.statChart.legend().markers(
+                        self.statItem[i])[0].setVisible(False)
+        elif key == "auto":
+            for i in self.statItem.keys():
+                if "auto" in i:
+                    self.statItem[i].setVisible(isChecked)
+                    if "lap_" in i:
+                        self.statChart.legend().markers(
+                            self.statItem[i])[0].setVisible(False)
+            self.xAutoAxis.setVisible(isChecked)
+            self.xManAxis.setVisible(not isChecked)
+        elif key == "manual":
+            for i in self.statItem.keys():
+                if "manual" in i:
+                    self.statItem[i].setVisible(isChecked)
+                    if "lap_" in i:
+                        self.statChart.legend().markers(
+                            self.statItem[i])[0].setVisible(False)
+            self.xAutoAxis.setVisible(not isChecked)
+            self.xManAxis.setVisible(isChecked)
+        elif key in ["speed", "heartrate", "cadence", "power"]:
+            self.statItem["auto_" + key].setVisible(isChecked & self.autoMode)
+            self.statItem["manual_" + key].setVisible(isChecked and not self.autoMode)
+
 
 
 if __name__ == "__main__":
