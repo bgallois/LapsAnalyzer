@@ -285,6 +285,8 @@ class QLaps(QMainWindow):
 
             self.get_stat_item()
             self.draw_stat()
+            self.xAutoAxis.clear()
+            self.xManAxis.clear()
             self.xAutoAxis.append(["Lap " + str(i) for i in range(len(self.gpsData.laps)-1)])
             self.xManAxis.append(["Lap " + str(i) for i in range(len(self.gpsDataManual.laps)-1)])
             self.yStatAxis.setRange(0, 220)
