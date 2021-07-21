@@ -549,11 +549,20 @@ class QLaps(QMainWindow):
         return rect
 
     def export_as_png(self):
-        self.ui.showFullScreen()
-        # Wait that the screen is repaint then save the chart
-        QTimer.singleShot(1000, self.save_png)
+        # Order is important
+        # 1. go to first stack
+        # 2. trigerred fullscreen for rendering
+        # 3. wait for repaint and export png of the first stack
+        # 4. move to next stack
+        # 5. trigerred fullscreen for rendering
+        # 6. wait for repaint and export png of the second stack
+        # 7. restore ui state
+        self.ui.chartStack.setCurrentIndex(0) # 1
+        self.ui.showFullScreen() # 2
+        QTimer.singleShot(1000, self.save_chart_png) # 3 4 5
+        QTimer.singleShot(2000, self.save_stat_png) # 6 7
 
-    def save_png(self):
+    def save_chart_png(self):
         if self.autoMode:
             data = self.gpsData
         else:
@@ -590,11 +599,21 @@ class QLaps(QMainWindow):
         p = QPixmap(self.chartView.size())
         self.chartView.render(p)
         fileName = QStandardPaths.standardLocations(QStandardPaths.PicturesLocation)[
-            0] + "/" + str(np.random.randint(100, 999)) + ".png"
+            0] + "/chart_" + str(np.random.randint(100, 999)) + ".png"
         p.save(fileName, "PNG", 100)
         self.ui.statusbar.showMessage("Chart exported as " + fileName, 8000)
         for i in overlay:
             self.chartView.scene().removeItem(i)
+        self.ui.chartStack.setCurrentIndex(1)
+        self.ui.showFullScreen()
+
+    def save_stat_png(self):
+        p = QPixmap(self.statView.size())
+        self.statView.render(p)
+        fileName = QStandardPaths.standardLocations(QStandardPaths.PicturesLocation)[
+            0] + "/boxplot_" + str(np.random.randint(100, 999)) + ".png"
+        p.save(fileName, "PNG", 100)
+        self.ui.statusbar.showMessage("Boxplot exported as " + fileName, 8000)
         self.ui.showNormal()
 
     def draw_plot(self, isChecked=True, key="all"):
