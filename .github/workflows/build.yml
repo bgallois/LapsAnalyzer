@@ -7,13 +7,13 @@ on:
 jobs:
 
   job_1:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.x'
+        python-version: '3.9'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -21,7 +21,7 @@ jobs:
     - name: Build package
       run: |
         pyside2-rcc resources.qrc -o rc_ressources.py
-        pyinstaller main.py --onefile --noconsole --name="LapsAnalyzer" --icon=assets/images/icon.ico
+        python -m PyInstaller main.py --onefile --noconsole --name="LapsAnalyzer" --icon=assets/images/icon.ico
     - name: Linux artefact
       uses: actions/upload-artifact@v1
       with:
