@@ -312,18 +312,21 @@ class QLaps(QMainWindow):
             data = self.gpsDataManual
         self.ui.statTab.clear()
         for l, i in enumerate(data.stat.keys()):
-            table = QTableWidget(4, 4)
+            table = QTableWidget(5, 4)
             table.setHorizontalHeaderLabels(["Variable", "Min", "Mean", "Max"])
             table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
             table.verticalHeader().setVisible(False)
-            for k, j in enumerate(data.stat[i].keys()):
+            for k, j in enumerate(["speed", "cadence", "heartrate", "power"]):
                 table.setItem(k, 0, QTableWidgetItem(j))
                 table.setItem(k, 1, QTableWidgetItem(
-                    str(np.around(data.stat[i][j]["min"], 1))))
+                    str(np.around(data.stat[i][j]["min"], 3))))
                 table.setItem(k, 2, QTableWidgetItem(
-                    str(np.around(data.stat[i][j]["mean"], 1))))
+                    str(np.around(data.stat[i][j]["mean"], 3))))
                 table.setItem(k, 3, QTableWidgetItem(
-                    str(np.around(data.stat[i][j]["max"], 1))))
+                    str(np.around(data.stat[i][j]["max"], 3))))
+            table.setItem(4, 0, QTableWidgetItem("duration"))
+            table.setItem(4, 2, QTableWidgetItem(
+                str(np.around(data.stat[i]["duration"], 1))))
             table.setStyleSheet(
                 "QTableWidget{{ background-color: rgba({0}, {1}, {2}, {3}); }}".format(
                     self.colorMap[l].red(),
@@ -334,19 +337,22 @@ class QLaps(QMainWindow):
 
         self.ui.statTab1.clear()
         for l, i in enumerate(data.stat.keys()):
-            table1 = QTableWidget(4, 4)
+            table1 = QTableWidget(5, 4)
             table1.setHorizontalHeaderLabels(
                 ["Variable", "Min", "Mean", "Max"])
             table1.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
             table1.verticalHeader().setVisible(False)
-            for k, j in enumerate(data.stat[i].keys()):
+            for k, j in enumerate(["speed", "cadence", "heartrate", "power"]):
                 table1.setItem(k, 0, QTableWidgetItem(j))
                 table1.setItem(k, 1, QTableWidgetItem(
-                    str(np.around(data.stat[i][j]["min"], 1))))
+                    str(np.around(data.stat[i][j]["min"], 3))))
                 table1.setItem(k, 2, QTableWidgetItem(
-                    str(np.around(data.stat[i][j]["mean"], 1))))
+                    str(np.around(data.stat[i][j]["mean"], 3))))
                 table1.setItem(k, 3, QTableWidgetItem(
-                    str(np.around(data.stat[i][j]["max"], 1))))
+                    str(np.around(data.stat[i][j]["max"], 3))))
+            table1.setItem(4, 0, QTableWidgetItem("duration"))
+            table1.setItem(4, 2, QTableWidgetItem(
+                str(np.around(data.stat[i]["duration"], 3))))
             table1.setStyleSheet(
                 "QTableWidget{{ background-color: rgba({0}, {1}, {2}, {3}); }}".format(
                     self.colorMap[l].red(),
@@ -364,17 +370,22 @@ class QLaps(QMainWindow):
         index1 = self.ui.statTab1.currentIndex()
         if "lap_{0}".format(index) in data.stat and "lap_{0}".format(
                 index1) in data.stat:
-            for k, j in enumerate(data.stat["lap_{0}".format(index)].keys()):
+            for k, j in enumerate(["speed", "cadence", "heartrate", "power"]):
                 self.ui.diffTable.setItem(k, 0, QTableWidgetItem(j))
                 self.ui.diffTable.setItem(k, 1, QTableWidgetItem(str(np.around(data.stat["lap_{0}".format(
-                    index)][j]["min"] - data.stat["lap_{0}".format(index1)][j]["min"], 1))))
+                    index)][j]["min"] - data.stat["lap_{0}".format(index1)][j]["min"], 2))))
                 self.ui.diffTable.setItem(k, 2, QTableWidgetItem(str(np.around(data.stat["lap_{0}".format(
-                    index)][j]["mean"] - data.stat["lap_{0}".format(index1)][j]["mean"], 1))))
+                    index)][j]["mean"] - data.stat["lap_{0}".format(index1)][j]["mean"], 2))))
                 self.ui.diffTable.setItem(k, 3, QTableWidgetItem(str(np.around(data.stat["lap_{0}".format(
-                    index)][j]["max"] - data.stat["lap_{0}".format(index1)][j]["max"], 1))))
+                    index)][j]["max"] - data.stat["lap_{0}".format(index1)][j]["max"], 2))))
+            self.ui.diffTable.setItem(4, 0, QTableWidgetItem("duration"))
+            self.ui.diffTable.setItem(4, 2, QTableWidgetItem(str(np.around(data.stat["lap_{0}".format(
+                index)]["duration"] - data.stat["lap_{0}".format(index1)]["duration"], 2))))
         for i in range(self.ui.diffTable.rowCount()):
             for j in range(self.ui.diffTable.columnCount() - 1):
-                if float(self.ui.diffTable.item(i, j + 1).text()) > 0:
+                if not self.ui.diffTable.item(i, j + 1):
+                    pass
+                elif float(self.ui.diffTable.item(i, j + 1).text()) > 0:
                     self.ui.diffTable.item(
                         i,
                         j +
