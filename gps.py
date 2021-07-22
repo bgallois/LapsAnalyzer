@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import sweat
 
+
 class Gps():
     def __init__(self, path, modeAuto=True):
         self.mode = modeAuto
@@ -52,7 +53,7 @@ class Gps():
 
     def get(self, key, distMin=0, distMax=np.inf):
         data = self.data[(self.data.distance.values >= distMin) & (
-                self.data.distance.values <= distMax)]
+            self.data.distance.values <= distMax)]
         if key in data.columns:
             return data[key].values
         else:
@@ -68,6 +69,8 @@ class Gps():
             data = self.data[(self.data.distance.values >= j) & (
                 self.data.distance.values <= self.laps[i + 1])]
             tmp = {}
+            tmp["duration"] = (data.index[-1] - data.index[0]
+                               ) / np.timedelta64(1, 'm')
             for k in ["speed", "cadence", "heartrate", "power"]:
                 if k in data.columns:
                     tmp[k] = {
@@ -85,7 +88,8 @@ class Gps():
         summary = []
         for j, i in enumerate(self.stat.keys()):
             summary.append(
-                " Lap: {lap} \n speed: {speed} \n heartrate: {hr} \n cadence: {cd} \n power: {pw} \n".format(
+                " Lap: {lap} \n duration: {dur} min \n speed: {speed} km/h \n heartrate: {hr} bpm \n cadence: {cd} rpm \n power: {pw} W \n".format(
+                    dur=str(np.around(self.stat[i]["duration"], 1)),
                     lap=str(j), speed=str(
                         np.around(
                             self.stat[i]["speed"]["mean"], 1)), hr=str(
