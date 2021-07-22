@@ -553,8 +553,8 @@ class QLaps(QMainWindow):
             rect.hovered.connect(
                 lambda x,
                 y: summary.showText(
-                    self.chartView.mapToGlobal(
-                        self.chartView.rect().topLeft()),
+                    self.statView.mapToGlobal(
+                        self.statView.rect().topLeft()),
                     self.gpsData.get_short_summary(count)))
         else:
             rect.hovered.connect(
