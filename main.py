@@ -279,7 +279,11 @@ class QLaps(QMainWindow):
             self.draw_plot()
             self.xAxis.setRange(0, self.gpsData.get("distance")[-1] * 1e-3)
             self.yAxis.setRange(0, 220)
-            self.yAxisElev.setRange(0, max(np.nanmax(self.gpsData.get("power")), np.nanmax(self.gpsData.get("elevation"))))
+            self.yAxisElev.setRange(
+                0, max(
+                    np.nanmax(
+                        self.gpsData.get("power")), np.nanmax(
+                        self.gpsData.get("elevation"))))
             self.load_statistic()
             self.statusInfo.setText(fileName + " is opened")
 
@@ -287,10 +291,13 @@ class QLaps(QMainWindow):
             self.draw_stat()
             self.xAutoAxis.clear()
             self.xManAxis.clear()
-            self.xAutoAxis.append(["Lap " + str(i) for i in range(len(self.gpsData.laps)-1)])
-            self.xManAxis.append(["Lap " + str(i) for i in range(len(self.gpsDataManual.laps)-1)])
+            self.xAutoAxis.append(["Lap " + str(i)
+                                  for i in range(len(self.gpsData.laps) - 1)])
+            self.xManAxis.append(["Lap " + str(i)
+                                 for i in range(len(self.gpsDataManual.laps) - 1)])
             self.yStatAxis.setRange(0, 220)
-            self.yStatAxisElev.setRange(0, np.nanmax(self.gpsData.get("power")))
+            self.yStatAxisElev.setRange(
+                0, np.nanmax(self.gpsData.get("power")))
 
             return True
         else:
@@ -461,7 +468,8 @@ class QLaps(QMainWindow):
             self.statItem["manual_lap_" + str(i)] = self.draw_cat_rectangle(
                 colorMap[i], i - 0.5, 1, i, True)
 
-        for l, k, m in zip(["speed (km/h)", "heartrate (bpm)", "cadence (rpm)", "power (W)"], ["speed", "heartrate", "cadence", "power"], [QColor(109, 144, 79, 255), QColor(252, 79, 48, 255), QColor(48, 162, 218, 255), QColor(229, 174, 56, 255)]):
+        for l, k, m in zip(["speed (km/h)", "heartrate (bpm)", "cadence (rpm)", "power (W)"], ["speed", "heartrate", "cadence",
+                           "power"], [QColor(109, 144, 79, 255), QColor(252, 79, 48, 255), QColor(48, 162, 218, 255), QColor(229, 174, 56, 255)]):
             box = QBoxPlotSeries()
             brush = box.brush()
             brush.setColor(m)
@@ -469,8 +477,13 @@ class QLaps(QMainWindow):
             box.setBrush(brush)
             box.setName(l)
             for i, j in enumerate(self.gpsData.laps[0:-1]):
-                data = self.gpsData.get(k, j, self.gpsData.laps[i+1])
-                box.append(QBoxSet(np.nanmin(data), np.nanpercentile(data, 25), np.nanpercentile(data, 50), np.nanpercentile(data, 75), np.nanmax(data), "Lap " + str(i)))
+                data = self.gpsData.get(k, j, self.gpsData.laps[i + 1])
+                box.append(
+                    QBoxSet(
+                        np.nanmin(data), np.nanpercentile(
+                            data, 25), np.nanpercentile(
+                            data, 50), np.nanpercentile(
+                            data, 75), np.nanmax(data), "Lap " + str(i)))
             self.statItem["auto_" + k] = box
 
             box = QBoxPlotSeries()
@@ -480,8 +493,14 @@ class QLaps(QMainWindow):
             brush.setStyle(Qt.SolidPattern)
             box.setBrush(brush)
             for i, j in enumerate(self.gpsDataManual.laps[0:-1]):
-                data = self.gpsDataManual.get(k, j, self.gpsDataManual.laps[i+1])
-                box.append(QBoxSet(np.nanmin(data), np.nanpercentile(data, 25), np.nanpercentile(data, 50), np.nanpercentile(data, 75), np.nanmax(data), "Lap " + str(i)))
+                data = self.gpsDataManual.get(
+                    k, j, self.gpsDataManual.laps[i + 1])
+                box.append(
+                    QBoxSet(
+                        np.nanmin(data), np.nanpercentile(
+                            data, 25), np.nanpercentile(
+                            data, 50), np.nanpercentile(
+                            data, 75), np.nanmax(data), "Lap " + str(i)))
             self.statItem["manual_" + k] = box
 
     def draw_rectangle(self, color, x, width, count, auto=True):
@@ -559,10 +578,10 @@ class QLaps(QMainWindow):
         # 5. trigerred fullscreen for rendering
         # 6. wait for repaint and export png of the second stack
         # 7. restore ui state
-        self.ui.chartStack.setCurrentIndex(0) # 1
-        self.ui.showFullScreen() # 2
-        QTimer.singleShot(1000, self.save_chart_png) # 3 4 5
-        QTimer.singleShot(2000, self.save_stat_png) # 6 7
+        self.ui.chartStack.setCurrentIndex(0)  # 1
+        self.ui.showFullScreen()  # 2
+        QTimer.singleShot(1000, self.save_chart_png)  # 3 4 5
+        QTimer.singleShot(2000, self.save_stat_png)  # 6 7
 
     def save_chart_png(self):
         if self.autoMode:
@@ -610,12 +629,25 @@ class QLaps(QMainWindow):
         self.ui.showFullScreen()
 
     def save_stat_png(self):
+        overlay = []
         p = QPixmap(self.statView.size())
+        text = QGraphicsTextItem("https://github.com/bgallois/LapsAnalyzer/")
+        text.setPos(
+            self.statChart.mapToScene(
+                self.statChart.mapToPosition(
+                    QPointF(
+                        -0.5, -5), self.statItem["auto_speed"])))
+
+        self.statView.scene().addItem(text)
+        overlay.append(text)
         self.statView.render(p)
         fileName = QStandardPaths.standardLocations(QStandardPaths.PicturesLocation)[
             0] + "/boxplot_" + str(np.random.randint(100, 999)) + ".png"
         p.save(fileName, "PNG", 100)
+
         self.ui.statusbar.showMessage("Boxplot exported as " + fileName, 8000)
+        for i in overlay:
+            self.statView.scene().removeItem(i)
         self.ui.showNormal()
 
     def draw_plot(self, isChecked=True, key="all"):
@@ -689,8 +721,8 @@ class QLaps(QMainWindow):
             self.xManAxis.setVisible(isChecked)
         elif key in ["speed", "heartrate", "cadence", "power"]:
             self.statItem["auto_" + key].setVisible(isChecked & self.autoMode)
-            self.statItem["manual_" + key].setVisible(isChecked and not self.autoMode)
-
+            self.statItem["manual_" +
+                          key].setVisible(isChecked and not self.autoMode)
 
 
 if __name__ == "__main__":
