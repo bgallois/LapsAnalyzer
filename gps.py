@@ -17,10 +17,40 @@ class Gps():
             self.laps = self.get_lap_len()
             self.stat = self.compute_data_by_lap(self.mode)
 
+        if "cadence" not in self.data.columns:
+            self.data["cadence"] = np.zeros(self.data["latitude"].values.size)
+        if "power" not in self.data.columns:
+            self.data["power"] = np.zeros(self.data["latitude"].values.size)
+        if "speed" not in self.data.columns:
+            self.data["speed"] = np.zeros(self.data["latitude"].values.size)
+        if "heartrate" not in self.data.columns:
+            self.data["heartrate"] = np.zeros(self.data["latitude"].values.size)
+
+        self.cdZeros = self.data["cadence"] == 0
+        self.pwZeros = self.data["power"] == 0
+        self.spZeros = self.data["speed"] == 0
+
     def set_offset(self, offset):
         self.laps = self.get_lap_len()
         self.offset = offset
         self.stat = self.compute_data_by_lap(self.mode)
+
+    def remove_zeros(self, cd=False, pw=False, sp=False):
+        if cd:
+            self.data["cadence"] = self.data["cadence"].replace(0, np.nan)
+        else:
+            self.data["cadence"][self.cdZeros.values] = 0
+        if pw:
+            self.data["power"] = self.data["power"].replace(0, np.nan)
+        else:
+            self.data["power"][self.pwZeros.values] = 0
+        if sp:
+            self.data["speed"] = self.data["speed"].replace(0, np.nan)
+        else:
+            self.data["speed"][self.spZeros.values] = 0
+
+        self.stat = self.compute_data_by_lap(self.mode)
+
 
     def get_lap_len(self):
         """
@@ -34,7 +64,7 @@ class Gps():
             distance,
             self.data.distance.values,
             self.data.latitude.values)
-        acf = sm.tsa.acf(interLat, nlags=len(interLat))
+        acf = sm.tsa.acf(interLat, nlags=len(interLat), fft=False)
         lapLen = distance[np.argmax(acf[np.argmin(acf)::]) + np.argmin(acf)]
         laps = [self.offset]
         for i in range(int(distance[-1] / lapLen)):

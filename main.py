@@ -231,7 +231,10 @@ class QLaps(QMainWindow):
         self.ui.diffTable.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.ui.diffTable.verticalHeader().setVisible(False)
 
-        self.ui.offset.valueChanged.connect(self.offset_changed)
+        self.ui.offset.valueChanged.connect(self.reload_data)
+        self.ui.cdZero.stateChanged.connect(self.reload_data)
+        self.ui.pwZero.stateChanged.connect(self.reload_data)
+
 
         # statusbar
         self.statusInfo = QLabel()
@@ -248,10 +251,13 @@ class QLaps(QMainWindow):
     def set_mode(self, auto):
         self.autoMode = auto
 
-    def offset_changed(self, value):
+    def reload_data(self):
         if hasattr(self, 'gpsData'):
             self.chart.removeAllSeries()
-            self.gpsData.set_offset(value * 1000)
+            self.gpsData.set_offset(self.ui.offset.value() * 1000)
+            self.gpsData.remove_zeros(cd=self.ui.cdZero.isChecked(), pw=self.ui.pwZero.isChecked(), sp=False)
+            self.gpsData.remove_zeros(cd=self.ui.cdZero.isChecked(), pw=self.ui.pwZero.isChecked(), sp=False)
+            self.gpsDataManual.remove_zeros(cd=self.ui.cdZero.isChecked(), pw=self.ui.pwZero.isChecked(), sp=False)
             self.get_plot_item()
             self.draw_plot()
             self.load_statistic()
