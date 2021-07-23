@@ -482,6 +482,7 @@ class QLaps(QMainWindow):
         for l, k, m in zip(["speed (km/h)", "heartrate (bpm)", "cadence (rpm)", "power (W)"], ["speed", "heartrate", "cadence",
                            "power"], [QColor(109, 144, 79, 255), QColor(252, 79, 48, 255), QColor(48, 162, 218, 255), QColor(229, 174, 56, 255)]):
             box = QBoxPlotSeries()
+            box.setBoxWidth(1)
             brush = box.brush()
             brush.setColor(m)
             brush.setStyle(Qt.SolidPattern)
@@ -498,11 +499,12 @@ class QLaps(QMainWindow):
             self.statItem["auto_" + k] = box
 
             box = QBoxPlotSeries()
-            box.setName(l)
+            box.setBoxWidth(1)
             brush = box.brush()
             brush.setColor(m)
             brush.setStyle(Qt.SolidPattern)
             box.setBrush(brush)
+            box.setName(l)
             for i, j in enumerate(self.gpsDataManual.laps[0:-1]):
                 data = self.gpsDataManual.get(
                     k, j, self.gpsDataManual.laps[i + 1])
