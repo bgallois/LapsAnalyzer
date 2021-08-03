@@ -114,11 +114,15 @@ class Gps():
 
         return stat
 
-    def get_short_summary(self, lap=None):
+    def get_short_summary(self, lap=None, legend=True):
         summary = []
         for j, i in enumerate(self.stat.keys()):
+            if legend:
+                base = " Lap: {lap} \n duration: {dur} min \n speed: {speed} km/h \n heartrate: {hr} bpm \n cadence: {cd} rpm \n power: {pw} W \n"
+            else:
+                base = " {lap} \n {dur} min \n {speed} km/h \n {hr} bpm \n {cd} rpm \n {pw} W \n"
             summary.append(
-                " Lap: {lap} \n duration: {dur} min \n speed: {speed} km/h \n heartrate: {hr} bpm \n cadence: {cd} rpm \n power: {pw} W \n".format(
+                base.format(
                     dur=str(np.around(self.stat[i]["duration"], 1)),
                     lap=str(j), speed=str(
                         np.around(

@@ -612,8 +612,8 @@ class QLaps(QMainWindow):
         for i, j in enumerate(data.laps[0:-1]):
             text = QGraphicsTextItem()
             text.setHtml(
-                "<div style='background-color:rgba(250, 250, 250, 0.7);'>" +
-                data.get_short_summary(i).replace(
+                "<div style='background-color:rgba(250, 250, 250, 0.7);font-size:14px;'>" +
+                "Lap " + data.get_short_summary(i, legend=False).replace(
                     "\n",
                     "<br>") +
                 "</div>")
@@ -624,6 +624,7 @@ class QLaps(QMainWindow):
                             j / 1000,
                             220),
                         self.plotItem["speed"])))
+            text.adjustSize()
             self.chartView.scene().addItem(text)
             overlay.append(text)
 
