@@ -491,7 +491,7 @@ class QLaps(QMainWindow):
 
         for i, j in enumerate(self.gpsDataManual.laps[0:-1]):
             self.statItem["manual_lap_" + str(i)] = self.draw_cat_rectangle(
-                colorMap[i], i - 0.5, 1, i, True)
+                colorMap[i], i - 0.5, 1, i, False)
 
         for l, k, m in zip(["speed (km/h)", "heartrate (bpm)", "cadence (rpm)", "power (W)"], ["speed", "heartrate", "cadence",
                            "power"], [QColor(109, 144, 79, 255), QColor(252, 79, 48, 255), QColor(48, 162, 218, 255), QColor(229, 174, 56, 255)]):
@@ -587,8 +587,8 @@ class QLaps(QMainWindow):
             rect.hovered.connect(
                 lambda x,
                 y: summary.showText(
-                    self.chartView.mapToGlobal(
-                        self.chartView.rect().topLeft()),
+                    self.statView.mapToGlobal(
+                        self.statView.rect().topLeft()),
                     self.gpsDataManual.get_short_summary(count)))
         rect.clicked.connect(lambda x: self.ui.statTab.setCurrentIndex(count))
         rect.clicked.connect(self.load_statistic_diff)
