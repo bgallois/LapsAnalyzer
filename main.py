@@ -7,7 +7,7 @@ import numpy as np
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QGraphicsScene, QToolTip, QTableWidget, QTableWidgetItem, QHeaderView, QGraphicsTextItem, QMessageBox, QLabel
 from PySide2.QtCore import Signal, QFile, QStandardPaths, QCoreApplication, Qt, QPoint, QPointF, QTimer
-from PySide2.QtGui import QColor, QIcon, QPen, QPainter, QPalette, QPixmap
+from PySide2.QtGui import QColor, QIcon, QPen, QPainter, QPalette, QPixmap, QFont, QFontDatabase
 import PySide2.QtXml
 
 from PySide2.QtUiTools import QUiLoader
@@ -235,7 +235,6 @@ class QLaps(QMainWindow):
         self.ui.cdZero.stateChanged.connect(self.reload_data)
         self.ui.pwZero.stateChanged.connect(self.reload_data)
 
-
         # statusbar
         self.statusInfo = QLabel()
         self.ui.statusbar.addPermanentWidget(self.statusInfo)
@@ -255,9 +254,18 @@ class QLaps(QMainWindow):
         if hasattr(self, 'gpsData'):
             self.chart.removeAllSeries()
             self.gpsData.set_offset(self.ui.offset.value() * 1000)
-            self.gpsData.remove_zeros(cd=self.ui.cdZero.isChecked(), pw=self.ui.pwZero.isChecked(), sp=False)
-            self.gpsData.remove_zeros(cd=self.ui.cdZero.isChecked(), pw=self.ui.pwZero.isChecked(), sp=False)
-            self.gpsDataManual.remove_zeros(cd=self.ui.cdZero.isChecked(), pw=self.ui.pwZero.isChecked(), sp=False)
+            self.gpsData.remove_zeros(
+                cd=self.ui.cdZero.isChecked(),
+                pw=self.ui.pwZero.isChecked(),
+                sp=False)
+            self.gpsData.remove_zeros(
+                cd=self.ui.cdZero.isChecked(),
+                pw=self.ui.pwZero.isChecked(),
+                sp=False)
+            self.gpsDataManual.remove_zeros(
+                cd=self.ui.cdZero.isChecked(),
+                pw=self.ui.pwZero.isChecked(),
+                sp=False)
             self.get_plot_item()
             self.draw_plot()
             self.load_statistic()
@@ -289,7 +297,7 @@ class QLaps(QMainWindow):
                 0, max(
                     np.nanmax(
                         self.gpsData.get("power")), np.nanmax(
-                        self.gpsData.get("elevation"))))
+                            self.gpsData.get("elevation") * 2)))
             self.load_statistic()
             self.statusInfo.setText(fileName + " is opened")
 
@@ -612,7 +620,7 @@ class QLaps(QMainWindow):
         for i, j in enumerate(data.laps[0:-1]):
             text = QGraphicsTextItem()
             text.setHtml(
-                "<div style='background-color:rgba(250, 250, 250, 0.7);font-size:14px;'>" +
+                "<div style='background-color:rgba(250, 250, 250, 0.7)'>" +
                 "Lap " + data.get_short_summary(i, legend=False).replace(
                     "\n",
                     "<br>") +
@@ -624,7 +632,12 @@ class QLaps(QMainWindow):
                             j / 1000,
                             220),
                         self.plotItem["speed"])))
-            text.adjustSize()
+            availWidth = self.chart.mapToPosition(QPointF(
+                data.laps[i + 1] / 1000, 0)).x() - self.chart.mapToPosition(QPointF(j / 1000, 0)).x()
+            text.setFont(QFont("Roboto Condensed", 11))
+            if text.boundingRect().width() > availWidth:
+                text.setTextWidth(availWidth)
+                text.setFont(QFont("Roboto Condensed", 8))
             self.chartView.scene().addItem(text)
             overlay.append(text)
 
@@ -747,6 +760,9 @@ class QLaps(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication([])
+    QFontDatabase.addApplicationFont(":/assets/RobotoCondensed-Regular.ttf")
+    QFontDatabase.addApplicationFont(":/assets/Roboto-Regular.ttf")
+    app.setFont(QFont("Roboto"))
     widget = QLaps()
     widget.ui.show()
     sys.exit(app.exec_())

@@ -24,7 +24,8 @@ class Gps():
         if "speed" not in self.data.columns:
             self.data["speed"] = np.zeros(self.data["latitude"].values.size)
         if "heartrate" not in self.data.columns:
-            self.data["heartrate"] = np.zeros(self.data["latitude"].values.size)
+            self.data["heartrate"] = np.zeros(
+                self.data["latitude"].values.size)
 
         self.cdZeros = self.data["cadence"] == 0
         self.pwZeros = self.data["power"] == 0
@@ -50,7 +51,6 @@ class Gps():
             self.data["speed"][self.spZeros.values] = 0
 
         self.stat = self.compute_data_by_lap(self.mode)
-
 
     def get_lap_len(self):
         """

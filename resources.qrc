@@ -9,5 +9,7 @@
     <file>assets/images/lapManual.png</file>
     <file>assets/images/settings.png</file>
     <file>form.ui</file>
+    <file>assets/RobotoCondensed-Regular.ttf</file>
+    <file>assets/Roboto-Regular.ttf</file>
 </qresource>
 </RCC>
