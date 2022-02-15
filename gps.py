@@ -2,6 +2,7 @@ from statsmodels import api as sm
 import pandas as pd
 import numpy as np
 import sweat
+import haversine as hs
 
 
 class Gps():
@@ -9,6 +10,15 @@ class Gps():
         self.mode = modeAuto
         self.data = sweat.read_fit(path)
         self.data.speed *= (3600 * 1e-3)
+        if self.data.distance.values[0] is None:
+            self.data.distance.values[0] = 0
+            for i, (lat, long) in enumerate(
+                    zip(self.data.latitude.values, self.data.longitude.values)):
+                if i != 0:
+                    self.data.distance.values[i] = self.data.distance.values[i - 1] + hs.haversine(
+                        (lat, long), prev) * 1E3
+                prev = (lat, long)
+            self.data = self.data.astype({"distance": np.float64}, copy=False)
         if not self.mode:
             self.laps = self.get_manual_laps()
             self.stat = self.compute_data_by_lap(self.mode)
